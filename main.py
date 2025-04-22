@@ -3,7 +3,7 @@ import random
 
 def check_balance(username):
     result = {}
-
+    
     # Get the account and its balance
     connection = mysql.connector.connect(user = "root", database = "example", 
     password = "x1321PF@33")
@@ -17,8 +17,7 @@ def check_balance(username):
     connection.close()
     return result
 
-def create_account(username, amount):
-    # Getting an unique account number
+def unique_number():
     num = 0
     connection = mysql.connector.connect(user = "root", database = "example", 
     password = "x1321PF@33")
@@ -29,14 +28,30 @@ def create_account(username, amount):
         cursor.execute(query, (num,))
         if cursor.fetchone() == None:
             break
-    
-    query = ('INSERT INTO account_info (Name, Account, Balance) VALUES (%s, %s, %s)')
-    record = (username, num, amount)
-    cursor.execute(query, record)
-    connection.commit()
     cursor.close()
     connection.close()
     return num
+    
+def create(username, amount, account):
+    # Getting an unique account number
+    connection = mysql.connector.connect(user = "root", database = "example", 
+    password = "x1321PF@33")
+    cursor = connection.cursor()
+    query = ('INSERT INTO account_info (Name, Account, Balance) VALUES (%s, %s, %s)')
+    record = (username, account, float(amount))
+    cursor.execute(query, record)
+    connection.commit()
+    
+
+    query = ('SELECT * FROM account_info WHERE Account = %s')
+    cursor.execute(query, (account,))
+    found = cursor.fetchone()
+    if found != None:
+        return True
+    else:
+        return False
+    cursor.close()
+    connection.close()
 
 def change_balance(num, amount):
     result = 0
@@ -52,7 +67,6 @@ def change_balance(num, amount):
     if found != None:
         result = amount + found[3]
     else:
-        print("This account does not exist.")
         cursor.close()
         connection.close()
         return False
@@ -265,9 +279,12 @@ def main():
             elif num == 4:
                 try:
                     amount = float(input("What is the principal amount?: "))
-                    account = create_account(username, amount)
-                    print("Successfully created an account.")
-                    print(f"Your account number is {account}")
+                    account = unique_number()
+                    if create(username, amount, account):
+                        print("Successfully created an account.")
+                        print(f"Your account number is {account}")
+                    else:
+                        print("Failed to create an account")
                 except ValueError:
                     print("Please enter numbers next time.")
         
@@ -286,7 +303,7 @@ def main():
                 username = modify(username)
             elif num == 7:
                 print("Thank you for using this system!")
-                print("Have a great day!")
+                print("Have a great day!\n")
                 break
             else:
                 print("Please choose a number 1-7 next time.")
